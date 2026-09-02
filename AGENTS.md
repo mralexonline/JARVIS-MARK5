@@ -36,6 +36,15 @@ docker compose -f docker-compose.base44.yml up -d --build
   minimal set to serve the UI. The full `requirements.txt` is the desktop app's
   list and is NOT installed here.
 
+## LLM providers (OpenAI / Anthropic)
+- `backend/modules/llms/` is now a **package**: `__init__.py` is the original
+  `llms.py` (Groq/Gradio/Ollama/Chroma/Postgres path — needs the full dep set), and
+  `providers.py` adds OpenAI + Anthropic via `chat(provider, messages) -> str`
+  (lazy-imports `openai`/`anthropic`, reads `OPENAI_API_KEY`/`ANTHROPIC_API_KEY`
+  from env). Existing `from backend.modules.llms import AIClient, pure_llama3`
+  still works; `from backend.modules.llms.providers import chat` is the new entry.
+- `openai` and `anthropic` are in `requirements.base44.txt`.
+
 ## Config / secrets
 - `.env.base44-defaults` provides `InputLanguage`, `NickName`, `AssistantName`,
   `PORT`, and an empty `GROQ_API` placeholder so the app boots with no credentials.
