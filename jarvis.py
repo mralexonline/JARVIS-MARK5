@@ -1,16 +1,32 @@
 import threading
-from backend.modules.automodel import Operate
-from backend.modules.basic.listenpy import Listen
+import json
 import os
+import base64
 import mtranslate as mt
 from threading import Lock
-import os
 import eel
-import pyautogui
-
-import base64
-from backend.modules.extra import GuiMessagesConverter, LoadMessages
 from dotenv import load_dotenv
+
+# Desktop/ML backend modules are optional in a headless container. The eel web
+# UI boots and serves regardless; AI/automation features activate only when the
+# heavy deps and credentials (GROQ_API, DB, Ollama, etc.) are present.
+try:
+    from backend.modules.automodel import Operate
+except Exception as e:
+    print(f"[boot] automodel unavailable (headless mode): {e}")
+    Operate = None
+
+try:
+    from backend.modules.basic.listenpy import Listen
+except Exception as e:
+    Listen = None
+
+try:
+    import pyautogui
+except Exception:
+    pyautogui = None
+
+from backend.modules.extra import GuiMessagesConverter, LoadMessages
 
 def get_api():
     try:
@@ -36,8 +52,9 @@ def run_docker():
     os.chdir("backend/AI/Perplexica")
     os.system("docker compose up -d")
 
-thread = threading.Thread(target=run_docker)
-thread.start()
+if os.environ.get('START_PERPLEXICA', '0') == '1':
+    thread = threading.Thread(target=run_docker)
+    thread.start()
 
 load_dotenv()
 state = 'Available...'
@@ -45,8 +62,8 @@ messages = LoadMessages()
 WEBCAM = False
 js_messageslist = []
 working: list[threading.Thread] = []
-InputLanguage = os.environ['InputLanguage']
-Username = os.environ['NickName']
+InputLanguage = os.environ.get('InputLanguage', 'en')
+Username = os.environ.get('NickName', 'User')
 lock = Lock()
 
 def UniversalTranslator(Text: str) -> str:
@@ -62,6 +79,9 @@ def MainExecution(Query: str):
     if state != 'Available...':
         return
     state = 'Thinking...'
+    if Operate is None:
+        state = 'Available...'
+        return "AI backend unavailable in headless mode (configure GROQ_API and services)."
     Decision = Operate(Query)
 
     if 'realtime-webcam' in Decision:
@@ -150,7 +170,8 @@ def js_page(cpage=None):
 @eel.expose
 def setup():
     """Sets up the GUI window."""
-    pyautogui.hotkey('win', 'up')
+    if pyautogui is not None:
+        pyautogui.hotkey('win', 'up')
 
 @eel.expose
 def js_language():
@@ -171,4 +192,10 @@ def js_capture(image_data):
 
 # Initialize Eel and start the application
 eel.init('web')
-eel.start('spider.html', port=44444)
+eel.start(
+    'spider.html',
+    host='0.0.0.0',
+    port=int(os.environ.get('PORT', '3000')),
+    mode=None,
+    default_path='spider.html',
+)

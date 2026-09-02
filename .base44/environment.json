@@ -1,0 +1,12 @@
+{
+  "previewPort": 3000,
+  "healthPath": "/",
+  "startCommand": "docker compose -f docker-compose.base44.yml up -d",
+  "secrets": [
+    {
+      "name": "GROQ_API",
+      "description": "Groq API key for JARVIS LLM calls (https://console.groq.com/keys). Optional for booting the UI; required for AI features.",
+      "requiredAtBoot": false
+    }
+  ]
+}

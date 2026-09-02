@@ -1,0 +1,7 @@
+# Minimal runtime deps to serve the JARVIS eel web UI headlessly.
+# The full desktop/ML backend (opencv, pyautogui, chromadb, ollama, selenium,
+# groq, gradio_client, etc.) is imported lazily and only when available, so the
+# UI boots without it. Add GROQ_API via the platform secrets to enable AI.
+eel
+mtranslate
+python-dotenv
