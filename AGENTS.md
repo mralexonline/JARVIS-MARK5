@@ -45,6 +45,15 @@ docker compose -f docker-compose.base44.yml up -d --build
   still works; `from backend.modules.llms.providers import chat` is the new entry.
 - `openai` and `anthropic` are in `requirements.base44.txt`.
 
+## Android Auto (simulated dashboard)
+- `web/auto.html` is an in-browser Android Auto-style dashboard (navigation,
+  media, phone, and a JARVIS assistant chat). Reach it from the landing page's
+  "🚗 Android Auto Dashboard" button or directly at `/auto.html`.
+- The assistant chat calls the new `@eel.expose js_llm_chat(provider, prompt)`
+  in `jarvis.py`, which dispatches to `providers.chat` (ChatGPT / Claude). Voice
+  input uses the Web Speech API and the existing `js_mic` bridge. Without API
+  keys it returns a clear "key not set" message instead of crashing.
+
 ## Config / secrets
 - `.env.base44-defaults` provides `InputLanguage`, `NickName`, `AssistantName`,
   `PORT`, and an empty `GROQ_API` placeholder so the app boots with no credentials.
