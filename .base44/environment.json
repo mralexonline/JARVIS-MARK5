@@ -7,6 +7,16 @@
       "name": "GROQ_API",
       "description": "Groq API key for JARVIS LLM calls (https://console.groq.com/keys). Optional for booting the UI; required for AI features.",
       "requiredAtBoot": false
+    },
+    {
+      "name": "OPENAI_API_KEY",
+      "description": "OpenAI API key for ChatGPT integration (https://platform.openai.com/api-keys). Optional; enables the OpenAI provider.",
+      "requiredAtBoot": false
+    },
+    {
+      "name": "ANTHROPIC_API_KEY",
+      "description": "Anthropic API key for Claude integration (https://console.anthropic.com/settings/keys). Optional; enables the Anthropic provider.",
+      "requiredAtBoot": false
     }
   ]
 }

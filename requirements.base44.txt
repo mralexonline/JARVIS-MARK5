@@ -5,3 +5,5 @@
 eel
 mtranslate
 python-dotenv
+openai
+anthropic
