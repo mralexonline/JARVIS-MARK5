@@ -166,6 +166,8 @@ def js_page(cpage=None):
         eel.openHome()
     elif cpage == 'settings':
         eel.openSettings()
+    elif cpage == 'auto':
+        eel.openAuto()
 
 @eel.expose
 def setup():
@@ -182,6 +184,23 @@ def js_language():
 def js_assistantname():
     """Returns the assistant's name."""
     return "JARVIS"
+
+@eel.expose
+def js_llm_chat(provider, prompt):
+    """Send a prompt to an LLM provider ('openai'/'chatgpt' or 'anthropic'/'claude').
+
+    Keys come from the platform secrets (OPENAI_API_KEY / ANTHROPIC_API_KEY).
+    Returns the assistant text, or an error string if the provider/keys are missing.
+    """
+    try:
+        from backend.modules.llms.providers import chat
+    except Exception as e:
+        return f"LLM providers unavailable: {e}"
+    messages = [
+        {"role": "system", "content": "You are JARVIS, a helpful AI assistant."},
+        {"role": "user", "content": prompt},
+    ]
+    return chat(provider, messages)
 
 @eel.expose
 def js_capture(image_data):

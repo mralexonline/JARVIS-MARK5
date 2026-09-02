@@ -1,14 +1,42 @@
 import logging
 import os
-import psycopg2
-from psycopg2.rows import dict_row
-from diskcache import Cache
-from gradio_client import Client
-from groq import Groq
-import chromadb
-import ollama
 from contextlib import contextmanager
 from logging.handlers import RotatingFileHandler
+
+# Heavy backend deps are optional: the OpenAI/Anthropic providers (providers.py)
+# and the eel UI must import this package even when Postgres/Chroma/Ollama/Groq/
+# Gradio aren't installed. Each is imported best-effort and falls back to None.
+try:
+    import psycopg2
+    from psycopg2.rows import dict_row
+except Exception:
+    psycopg2 = None
+    dict_row = None
+
+try:
+    from diskcache import Cache
+except Exception:
+    Cache = None
+
+try:
+    from gradio_client import Client
+except Exception:
+    Client = None
+
+try:
+    from groq import Groq
+except Exception:
+    Groq = None
+
+try:
+    import chromadb
+except Exception:
+    chromadb = None
+
+try:
+    import ollama
+except Exception:
+    ollama = None
 
 
 # Setup logging with rotation
@@ -77,10 +105,19 @@ MODEL_EMBED = os.getenv('MODEL_EMBED', 'nomic-embed-text')
 GROQ_API = os.getenv("GROQ_API")
 VECTOR_DB_NAME = 'conversations'
 
-# Initialize components
-cache = Cache(CACHE_DIR)
-client = Client("osanseviero/mistral-super-fast")
-chromadb_client = chromadb.Client()
+# Initialize components (optional in lightweight/headless setups)
+try:
+    cache = Cache(CACHE_DIR) if Cache else None
+except Exception:
+    cache = None
+try:
+    client = Client("osanseviero/mistral-super-fast") if Client else None
+except Exception:
+    client = None
+try:
+    chromadb_client = chromadb.Client() if chromadb else None
+except Exception:
+    chromadb_client = None
 
 messages_normal = [
     {"role": "system", "content": "You are named JARVIS, inspired by Iron Man, brought to life by Likhith Sai"},

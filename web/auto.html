@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JARVIS · Android Auto</title>
+    <style>
+        @import url("https://fonts.googleapis.com/css?family=Poppins:400,500,600,700");
+        :root {
+            --bg: #0b0f14;
+            --panel: #161c24;
+            --panel-2: #1e2630;
+            --accent: #4e97eb;
+            --accent-2: #34d399;
+            --text: #e8eef5;
+            --muted: #8a97a8;
+            --danger: #ef4444;
+            --radius: 18px;
+            --font: "Poppins", Helvetica, sans-serif;
+        }
+        * { box-sizing: border-box; }
+        html, body { margin: 0; height: 100%; }
+        body {
+            background: radial-gradient(120% 80% at 50% 0%, #14202c 0%, var(--bg) 60%);
+            color: var(--text);
+            font-family: var(--font);
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            user-select: none;
+        }
+
+        /* Top status bar */
+        .topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 22px;
+            background: rgba(8, 12, 16, 0.6);
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+        .topbar .clock { font-size: 22px; font-weight: 600; letter-spacing: 0.5px; }
+        .topbar .badge {
+            display: flex; align-items: center; gap: 8px;
+            font-size: 13px; color: var(--muted);
+            background: var(--panel); padding: 6px 12px; border-radius: 999px;
+        }
+        .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent-2); box-shadow: 0 0 8px var(--accent-2); }
+        .dot.busy { background: var(--accent); box-shadow: 0 0 8px var(--accent); }
+
+        /* Main grid */
+        .stage {
+            flex: 1;
+            display: grid;
+            grid-template-columns: 1.1fr 1fr;
+            grid-template-rows: 1fr 1fr;
+            gap: 16px;
+            padding: 18px;
+            max-width: 1100px;
+            margin: 0 auto;
+            width: 100%;
+        }
+        .card {
+            background: linear-gradient(180deg, var(--panel) 0%, var(--panel-2) 100%);
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: var(--radius);
+            padding: 18px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .card h2 { margin: 0 0 12px; font-size: 14px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+
+        /* Navigation card */
+        .nav { grid-row: span 2; }
+        .map {
+            flex: 1;
+            border-radius: 14px;
+            background:
+                linear-gradient(135deg, rgba(78,151,235,0.15), rgba(52,211,153,0.08)),
+                repeating-linear-gradient(0deg, rgba(255,255,255,0.04) 0 2px, transparent 2px 40px),
+                repeating-linear-gradient(90deg, rgba(255,255,255,0.04) 0 2px, transparent 2px 40px);
+            position: relative;
+            display: flex;
+            align-items: flex-end;
+            padding: 14px;
+        }
+        .route {
+            background: rgba(0,0,0,0.45);
+            border-radius: 12px;
+            padding: 10px 14px;
+            font-size: 13px;
+        }
+        .route b { color: var(--accent); }
+        .eta { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+        /* Media card */
+        .media-row { display: flex; align-items: center; gap: 14px; }
+        .album {
+            width: 54px; height: 54px; border-radius: 12px;
+            background: linear-gradient(135deg, #6d28d9, #4e97eb);
+            flex-shrink: 0;
+        }
+        .media-meta .title { font-weight: 600; font-size: 15px; }
+        .media-meta .sub { font-size: 12px; color: var(--muted); }
+        .controls { display: flex; gap: 10px; margin-top: 14px; }
+        .ctrl {
+            flex: 1; text-align: center; padding: 10px 0;
+            background: rgba(255,255,255,0.05); border-radius: 12px;
+            font-size: 18px; cursor: pointer; transition: background .15s;
+        }
+        .ctrl:hover { background: rgba(78,151,235,0.2); }
+        .progress { height: 4px; background: rgba(255,255,255,0.08); border-radius: 4px; margin-top: 14px; overflow: hidden; }
+        .progress i { display: block; width: 38%; height: 100%; background: var(--accent); }
+
+        /* Assistant card */
+        .assistant { grid-column: span 2; }
+        .chat {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            padding-right: 4px;
+            min-height: 120px;
+            max-height: 220px;
+        }
+        .msg { font-size: 14px; line-height: 1.4; padding: 8px 12px; border-radius: 12px; max-width: 85%; }
+        .msg.user { align-self: flex-end; background: var(--accent); color: #fff; }
+        .msg.bot { align-self: flex-start; background: rgba(255,255,255,0.06); }
+        .msg.sys { align-self: center; color: var(--muted); font-size: 12px; }
+        .ask-row { display: flex; gap: 8px; margin-top: 12px; }
+        .ask-row select, .ask-row input, .ask-row button { font-family: var(--font); }
+        .ask-row select {
+            background: var(--panel-2); color: var(--text); border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 10px; padding: 0 10px; font-size: 13px; cursor: pointer;
+        }
+        .ask-row input {
+            flex: 1; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.08);
+            color: var(--text); border-radius: 10px; padding: 10px 12px; font-size: 14px; outline: none;
+        }
+        .ask-row input:focus { border-color: var(--accent); }
+        .btn {
+            background: var(--accent); color: #fff; border: none; border-radius: 10px;
+            padding: 0 16px; font-weight: 600; font-size: 14px; cursor: pointer;
+        }
+        .btn.ghost { background: rgba(255,255,255,0.06); }
+        .btn:disabled { opacity: 0.5; cursor: default; }
+        .mic-btn {
+            width: 42px; height: 42px; border-radius: 50%; border: none; cursor: pointer;
+            background: rgba(255,255,255,0.06); font-size: 18px; display: flex; align-items: center; justify-content: center;
+        }
+        .mic-btn.active { background: var(--danger); animation: pulse 1.2s infinite; }
+        @keyframes pulse { 0%,100%{ box-shadow: 0 0 0 0 rgba(239,68,68,0.5);} 50%{ box-shadow: 0 0 0 8px rgba(239,68,68,0);} }
+
+        /* Dock */
+        .dock {
+            display: flex; justify-content: center; gap: 14px;
+            padding: 14px 18px 22px;
+        }
+        .app {
+            display: flex; flex-direction: column; align-items: center; gap: 6px;
+            padding: 12px 18px; border-radius: 14px; cursor: pointer;
+            background: var(--panel); color: var(--text); font-size: 12px;
+            border: 1px solid rgba(255,255,255,0.05); transition: background .15s;
+        }
+        .app:hover { background: var(--panel-2); }
+        .app .ic { font-size: 22px; }
+        .app.active { background: rgba(78,151,235,0.18); border-color: var(--accent); }
+
+        .back { color: var(--muted); text-decoration: none; font-size: 13px; }
+        .back:hover { color: var(--text); }
+    </style>
+</head>
+<body>
+    <div class="topbar">
+        <div class="clock" id="clock">--:--</div>
+        <div class="badge"><span class="dot" id="stateDot"></span><span id="state">Available...</span> · JARVIS</div>
+        <a class="back" href="home.html">‹ Home</a>
+    </div>
+
+    <div class="stage">
+        <!-- Navigation -->
+        <div class="card nav">
+            <h2>Navigation</h2>
+            <div class="map">
+                <div class="route">
+                    <b>Next turn:</b> In 400 m, turn right onto King St W
+                    <div class="eta">ETA 12 min · 6.2 km · Light traffic</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Media -->
+        <div class="card">
+            <h2>Media</h2>
+            <div class="media-row">
+                <div class="album"></div>
+                <div class="media-meta">
+                    <div class="title">Driving Home</div>
+                    <div class="sub">JARVIS Radio · Simulated</div>
+                </div>
+            </div>
+            <div class="progress"><i></i></div>
+            <div class="controls">
+                <div class="ctrl" onclick="showToast('⏮ Previous')">⏮</div>
+                <div class="ctrl" onclick="togglePlay(this)">▶</div>
+                <div class="ctrl" onclick="showToast('⏭ Next')">⏭</div>
+            </div>
+        </div>
+
+        <!-- Assistant -->
+        <div class="card">
+            <h2>Phone</h2>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                <div class="ctrl" style="flex:0 0 auto;padding:10px 16px;" onclick="showToast('📞 Calling Home…')">📞 Home</div>
+                <div class="ctrl" style="flex:0 0 auto;padding:10px 16px;" onclick="showToast('📞 Calling Work…')">📞 Work</div>
+                <div class="ctrl" style="flex:0 0 auto;padding:10px 16px;" onclick="showToast('📞 Voicemail')">📟 Voicemail</div>
+            </div>
+            <div style="margin-top:14px;color:var(--muted);font-size:13px;">No active calls</div>
+        </div>
+
+        <!-- Assistant chat -->
+        <div class="card assistant">
+            <h2>JARVIS Assistant</h2>
+            <div class="chat" id="chat">
+                <div class="msg sys">Simulated Android Auto dashboard. Ask JARVIS anything.</div>
+            </div>
+            <div class="ask-row">
+                <select id="provider">
+                    <option value="openai">ChatGPT</option>
+                    <option value="anthropic">Claude</option>
+                </select>
+                <input id="prompt" type="text" placeholder="Ask JARVIS…" autocomplete="off"
+                       onkeydown="if(event.key==='Enter') sendPrompt()">
+                <button class="mic-btn" id="mic" title="Voice input">🎙</button>
+                <button class="btn" id="send" onclick="sendPrompt()">Send</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="dock">
+        <div class="app active"><span class="ic">🧭</span>Maps</div>
+        <div class="app"><span class="ic">🎵</span>Music</div>
+        <div class="app"><span class="ic">📞</span>Phone</div>
+        <div class="app"><span class="ic">🤖</span>Assistant</div>
+        <div class="app"><span class="ic">⚙️</span><a href="settings.html" style="color:inherit;text-decoration:none;">Settings</a></div>
+    </div>
+
+    <div id="toast" style="position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#000;color:#fff;padding:10px 18px;border-radius:10px;font-size:13px;opacity:0;transition:opacity .2s;pointer-events:none;"></div>
+
+    <script type="text/javascript" src="/eel.js"></script>
+    <script>
+        // Clock
+        function tick() {
+            const d = new Date();
+            document.getElementById('clock').textContent =
+                d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        }
+        setInterval(tick, 1000); tick();
+
+        // Toast
+        let toastTimer;
+        function showToast(text) {
+            const t = document.getElementById('toast');
+            t.textContent = text; t.style.opacity = '1';
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => t.style.opacity = '0', 1800);
+        }
+
+        // Media play/pause toggle
+        function togglePlay(el) {
+            el.textContent = el.textContent === '▶' ? '⏸' : '▶';
+            showToast(el.textContent === '⏸' ? '▶ Now playing' : '⏸ Paused');
+        }
+
+        // Chat
+        const chat = document.getElementById('chat');
+        function addMsg(role, text) {
+            const m = document.createElement('div');
+            m.className = 'msg ' + role;
+            m.textContent = text;
+            chat.appendChild(m);
+            chat.scrollTop = chat.scrollHeight;
+        }
+
+        async function sendPrompt() {
+            const input = document.getElementById('prompt');
+            const provider = document.getElementById('provider').value;
+            const text = input.value.trim();
+            if (!text) return;
+            addMsg('user', text);
+            input.value = '';
+            const sendBtn = document.getElementById('send');
+            sendBtn.disabled = true;
+            addMsg('sys', 'JARVIS is thinking…');
+            try {
+                const res = await eel.js_llm_chat(provider, text)();
+                // replace the "thinking" sys line with the answer
+                chat.lastChild.remove();
+                addMsg('bot', res);
+            } catch (e) {
+                chat.lastChild.remove();
+                addMsg('sys', 'Error: ' + e);
+            } finally {
+                sendBtn.disabled = false;
+            }
+        }
+
+        // Voice input via Web Speech API -> existing js_mic bridge
+        const micBtn = document.getElementById('mic');
+        let recognizing = false;
+        if ('webkitSpeechRecognition' in window) {
+            const rec = new webkitSpeechRecognition();
+            rec.lang = 'en-US'; rec.interimResults = false; rec.continuous = false;
+            rec.onresult = (e) => {
+                const t = e.results[0][0].transcript;
+                document.getElementById('prompt').value = t;
+                eel.js_state('Available...');
+            };
+            rec.onend = () => { recognizing = false; micBtn.classList.remove('active'); };
+            rec.onerror = () => { recognizing = false; micBtn.classList.remove('active'); };
+            micBtn.addEventListener('click', () => {
+                if (recognizing) { rec.stop(); return; }
+                recognizing = true; micBtn.classList.add('active');
+                eel.js_state('Listening...'); rec.start();
+            });
+        } else {
+            micBtn.addEventListener('click', () => showToast('Voice input unsupported in this browser'));
+        }
+
+        // Live state from backend
+        async function syncState() {
+            try {
+                const s = await eel.js_state()();
+                document.getElementById('state').textContent = s;
+                document.getElementById('stateDot').classList.toggle('busy', s !== 'Available...');
+            } catch (e) {}
+        }
+        setInterval(syncState, 1000); syncState();
+
+        // Allow Python to open this page via js_page('auto')
+        eel.expose(openAuto);
+        function openAuto() { window.location = 'auto.html'; }
+    </script>
+</body>
+</html>
