@@ -1,0 +1,33 @@
+{
+  "version": 1,
+  "assistant_name": "JARVIS",
+  "wake_phrases": ["jarvis", "hey jarvis"],
+  "require_wake_phrase": true,
+  "conversation_memory": {
+    "provider": "device_local",
+    "max_turns": 40,
+    "chatgpt_account_memory": "not_available_via_public_api"
+  },
+  "voice": {
+    "language": "en-CA",
+    "preferred_locale": "en-GB",
+    "rate": 1.0
+  },
+  "integrations": {
+    "control_panel": "https://jarvis-control-panel.mralexonline.chatgpt.site",
+    "chatgpt_voice": {
+      "mode": "user_initiated_handoff",
+      "direct_memory_sync": false
+    },
+    "android_bridge": {
+      "status": "required_for_background_wake_word",
+      "permissions_default": "deny"
+    }
+  },
+  "confirmation_rules": {
+    "place_call": "always",
+    "send_message": "always",
+    "open_dialer": "always",
+    "open_whatsapp": "always"
+  }
+}
